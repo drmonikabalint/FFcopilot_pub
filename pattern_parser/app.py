@@ -1,25 +1,24 @@
-# backend/main.py
-from fastapi import FastAPI, File, UploadFile
-import tempfile
-from parser import process_pattern_file
-import os
+import streamlit as st
+import requests
 
-app = FastAPI()
+st.title("Upload a pattern file and run parser")
 
-@app.post("/process")
-async def process(file: UploadFile = File(...)):
-    suffix = ".pdf" if file.filename.lower().endswith(".pdf") else ".docx"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(await file.read())
-        tmp_path = tmp.name
+uploaded = st.file_uploader("Upload a PDF or DOCX file", type=["pdf", "docx"])
 
-    parsed, flat_rows = process_pattern_file(tmp_path)
+if uploaded and st.button("Run parser"):
+    with st.spinner("Running your parser..."):
+        files = {"file": (uploaded.name, uploaded.getvalue())}
+        resp = requests.post("https://my-backend.onrender.com/process", files=files)
 
-    # Read your result files
-    files = {}
-    for f in ["summary.txt","logs_correct.txt","logs_error.txt","logs_warning.txt"]:
-        if os.path.exists(f):
-            with open(f,"r",encoding="utf-8") as fh:
-                files[f] = fh.read()
-
-    return {"status":"ok","files":files}
+    if resp.status_code == 200:
+        data = resp.json()
+        for fname, content in data["files"].items():
+            st.download_button(
+                label=f"Download {fname}",
+                data=content,
+                file_name=fname,
+                mime="text/plain",
+                key=f"download_{fname}"
+            )
+    else:
+        st.error("Error calling backend API")
