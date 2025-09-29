@@ -8,7 +8,7 @@ uploaded = st.file_uploader("Upload a PDF or DOCX file", type=["pdf", "docx"])
 if uploaded and st.button("Run parser"):
     with st.spinner("Running your parser..."):
         files = {"file": (uploaded.name, uploaded.getvalue())}
-        resp = requests.post("https://my-backend.onrender.com/process", files=files)
+        resp = requests.post("https://ffcopilot-1.onrender.com/", files=files)
 
     if resp.status_code == 200:
         data = resp.json()
