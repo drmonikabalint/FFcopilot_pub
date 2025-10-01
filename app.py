@@ -8,17 +8,21 @@ uploaded = st.file_uploader("Upload a PDF or DOCX file", type=["pdf", "docx"])
 if uploaded and st.button("Run parser"):
     with st.spinner("Running your parser..."):
         files = {"file": (uploaded.name, uploaded.getvalue())}
-        resp = requests.post("https://ffcopilot-1.onrender.com/", files=files)
+        resp = requests.post("https://ffcopilot-1.onrender.com/process", files=files)
 
     if resp.status_code == 200:
         data = resp.json()
-        for fname, content in data["files"].items():
-            st.download_button(
-                label=f"Download {fname}",
-                data=content,
-                file_name=fname,
-                mime="text/plain",
-                key=f"download_{fname}"
-            )
+        if "files" in data:
+            for fname, content in data["files"].items():
+                st.download_button(
+                    label=f"Download {fname}",
+                    data=content,
+                    file_name=fname,
+                    mime="text/plain",
+                    key=f"download_{fname}"
+                )
+        else:
+            st.warning("No files returned by backend.")
     else:
-        st.error("Error calling backend API")
+        st.error(f"Error calling backend API: {resp.status_code}")
+
